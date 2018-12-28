@@ -8,3 +8,14 @@ To use, add this line to your Cargo.toml:
 [dependencies]
 procmaps = "0.1.0"
 ```
+## Example
+```rust
+use procmaps::maps;
+
+let m = maps(pid).unwrap();
+for mapping in m {
+    if mapping.perms.executable {
+        println!("Region: {:x} - {:x}", mapping.base, mapping.ceiling);
+    }
+}
+```
