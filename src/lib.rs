@@ -18,8 +18,9 @@ pub enum Permissions {
 /// /proc/[pid]/maps
 #[derive(Debug)]
 pub struct Map {
-    pub base: usize,
-    pub ceiling: usize,
+    pub base: *const u8,
+    pub ceiling: *const u8,
+    // TODO: make perms a bitfield
     pub perms: String,
     pub offset: usize,
     pub dev_major: usize,
@@ -49,8 +50,8 @@ named!(parse_map<&str, Map>,
         pathname: opt!(take_until!("\n")) >>
         // pathname: opt!(map!(take_until!("\n"), String::from)) >>
         (Map {
-            base: usize::from_str_radix(&base, 16).unwrap(),
-            ceiling: usize::from_str_radix(&ceiling, 16).unwrap(), 
+            base: usize::from_str_radix(&base, 16).unwrap() as *const u8,
+            ceiling: usize::from_str_radix(&ceiling, 16).unwrap() as *const u8,
             perms: perms.into(), 
             offset: usize::from_str_radix(&offset, 16).unwrap(), 
             dev_major: usize::from_str_radix(&dev_major, 16).unwrap(), 
@@ -100,8 +101,8 @@ mod tests {
         let input = "55e8d4153000-55e8d416f000 r-xp 00000000 08:02 9175073                    /bin/dash\n";
         let res = parse_map(input).unwrap().1;
         println!("{:?}", res);
-        assert_eq!(res.base, 94458478931968);
-        assert_eq!(res.ceiling, 94458479046656);
+        assert_eq!(res.base, 94458478931968 as *const u8);
+        assert_eq!(res.ceiling, 94458479046656 as *const u8);
         assert_eq!(res.offset, 0);
         assert_eq!(res.dev_major, 8);
         assert_eq!(res.dev_minor, 2);
