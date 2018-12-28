@@ -70,7 +70,7 @@ fn map_from_str(input: &str) -> Result<Map> {
 
     match res {
         Ok(val) => Ok(val.1),
-        Err(e) => Err(Error::new(ErrorKind::InvalidInput, format!("unable to parse: {}", e))),
+        Err(e) => Err(Error::new(ErrorKind::InvalidInput, format!("Invalid maps format: {}", e))),
     }
 }
 
