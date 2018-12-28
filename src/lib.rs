@@ -3,6 +3,7 @@ extern crate nom;
 
 use std::io::Result;
 use libc::pid_t;
+use nom::is_alphabetic;
 
 pub enum Permissions {
     Read,
@@ -44,9 +45,13 @@ named!(parse_map<&str, Map>,
         perms: map!(take_until!(" "), String::from)     >>
         take!(1)                                        >>
         offset: map!(take_until!(" "), String::from)    >>
+        take!(1)                                        >>
         dev_major: map!(take_until!(":"), String::from) >>
+        take!(1)                                        >>
         dev_minor: map!(take_until!(" "), String::from) >>
+        take!(1)                                        >>
         inode: map!(take_until!(" "), String::from)     >>
+        take_while!(|ch: char| ch.is_whitespace())              >>
         pathname: map!(take_until!("\n"), String::from) >>
         (Map {base: base.into(), ceiling: ceiling.into(), perms: perms.into(), offset: offset.into(), dev_major: dev_major.into(), dev_minor: dev_minor.into(), inode: inode.into(), pathname: pathname.into()})
     )
