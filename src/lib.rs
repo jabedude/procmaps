@@ -3,7 +3,7 @@ extern crate nom;
 
 use std::io::{Read, Result, Error, ErrorKind};
 use libc::pid_t;
-use nom::{IResult, is_alphabetic};
+use nom::{IResult, is_alphabetic, rest};
 use std::fs::File;
 
 pub enum Permissions {
@@ -13,18 +13,10 @@ pub enum Permissions {
     Shared,
     Private,
 }
-/*
-pub struct Map {
-    pub base: usize,
-    pub ceiling: usize,
-    pub perms: String,
-    pub offset: usize,
-    pub dev_major: usize,
-    pub dev_minor: usize,
-    pub inode: usize,
-    pub pathname: String,
-}
-*/
+
+
+/// man 5 proc
+/// /proc/[pid]/maps
 #[derive(Debug)]
 pub struct Map {
     pub base: usize,
@@ -34,7 +26,8 @@ pub struct Map {
     pub dev_major: usize,
     pub dev_minor: usize,
     pub inode: usize,
-    pub pathname: String,
+    /// If there is no pathname, this mapping was obtained via mmap(2)
+    pub pathname: Option<String>,
 }
 
 named!(parse_map<&str, Map>,
@@ -52,37 +45,48 @@ named!(parse_map<&str, Map>,
         dev_minor: map!(take_until!(" "), String::from) >>
         take!(1)                                        >>
         inode: map!(take_until!(" "), String::from)     >>
-        take_while!(|ch: char| ch.is_whitespace())      >>
-        pathname: map!(take_until!("\n"), String::from) >>
+        //take_while!(|ch: char| ch.is_whitespace())      >>
+        take!(1)                                        >>
+        pathname: opt!(take_until!("\n")) >>
+        // pathname: opt!(map!(take_until!("\n"), String::from)) >>
         (Map {
             base: usize::from_str_radix(&base, 16).unwrap(),
             ceiling: usize::from_str_radix(&ceiling, 16).unwrap(), 
             perms: perms.into(), 
-            offset: usize::from_str_radix(&ceiling, 16).unwrap(), 
+            offset: usize::from_str_radix(&offset, 16).unwrap(), 
             dev_major: usize::from_str_radix(&dev_major, 16).unwrap(), 
             dev_minor: usize::from_str_radix(&dev_minor, 16).unwrap(),
             inode: usize::from_str_radix(&inode, 16).unwrap(),
-            pathname: pathname.into()
+            pathname: match pathname.unwrap() {
+                "" => None,
+                path => Some(path.trim().to_string()),
+            }
         })
     )
 );
 
-fn maps_from_file(file: &mut File) -> Result<Map> {
-    let mut input = String::new();
-    file.read_to_string(&mut input)?;
-
-    let res = parse_map(&input);
+fn map_from_str(input: &str) -> Result<Map> {
+    let res = parse_map(input);
 
     match res {
         Ok(val) => Ok(val.1),
-        Err(e) => Err(Error::new(ErrorKind::InvalidInput, "unable to parse")),
+        Err(e) => Err(Error::new(ErrorKind::InvalidInput, format!("unable to parse: {}", e))),
     }
 }
 
-pub fn maps(pid: pid_t) -> Result<Map> {
+pub fn maps(pid: pid_t) -> Result<Vec<Map>> {
     let path = format!("/proc/{}/maps", pid);
     let mut file = File::open(path)?;
-    maps_from_file(&mut file)
+    let mut input = String::new();
+    file.read_to_string(&mut input)?;
+
+    let mut res: Vec<Map> = Vec::new();
+    for s in input.split("\n") {
+        let map = map_from_str(&format!("{}\n", &s))?;
+        res.push(map);
+    }
+
+    Ok(res)
 }
 
 #[cfg(test)]
@@ -96,10 +100,16 @@ mod tests {
     }
 
     #[test]
-    fn test_maps_from_file() {
-        let mut infile = File::open("tests/example.txt").unwrap();
-        let res = maps_from_file(&mut infile);
-        println!("{:?}", res);
-    }
+    fn test_map_from_str() {
+        let mut file = File::open("tests/example.txt").unwrap();
+        let mut input = String::new();
+        file.read_to_string(&mut input).unwrap();
 
+        let mut iter: Vec<&str> = input.split("\n").collect();
+        iter.pop();
+        for s in iter {
+            let map = map_from_str(&format!("{}\n", &s)).unwrap();
+            println!("{:?}", map);
+        }
+    }
 }
