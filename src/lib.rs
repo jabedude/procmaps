@@ -8,14 +8,40 @@ use std::fs::File;
 
 //TODO: create error/result type
 
-pub enum Permissions {
-    Read,
-    Write,
-    Execute,
+#[derive(PartialEq, Debug)]
+pub enum Privacy {
     Shared,
     Private,
 }
 
+#[derive(Debug)]
+pub struct Permissions {
+    pub readable: bool,
+    pub writable: bool,
+    pub executable: bool,
+    pub privacy: Privacy,
+}
+
+impl From<String> for Permissions {
+    fn from(input: String) -> Self {
+        let readable = input.chars().nth(0) == Some('r');
+        let writable = input.chars().nth(1) == Some('w');
+        let executable = input.chars().nth(2) == Some('x');
+
+        let privacy = match input.chars().nth(3) {
+            Some('p') => Privacy::Private,
+            Some('s') => Privacy::Shared,
+            e => panic!("Unknown {:?}", e),
+        };
+
+        Permissions {
+            readable: readable,
+            writable: writable,
+            executable: executable,
+            privacy: privacy,
+        }
+    }
+}
 
 /// man 5 proc
 /// /proc/[pid]/maps
@@ -24,7 +50,7 @@ pub struct Map {
     pub base: *const u8,
     pub ceiling: *const u8,
     // TODO: make perms a bitfield
-    pub perms: String,
+    pub perms: Permissions,
     pub offset: usize,
     pub dev_major: usize,
     pub dev_minor: usize,
@@ -111,6 +137,17 @@ mod tests {
         assert_eq!(res.dev_minor, 2);
         assert_eq!(res.inode, 152522867);
         assert_eq!(res.pathname.unwrap(), "/bin/dash");
+    }
+
+    #[test]
+    fn test_map_perms() {
+        let input = "55e8d4153000-55e8d416f000 r-xp 00000000 08:02 9175073                    /bin/dash\n";
+        let res = map_from_str(input).unwrap();
+        println!("{:?}", res);
+        assert!(res.perms.readable);
+        assert!(!res.perms.writable);
+        assert!(res.perms.executable);
+        assert_eq!(res.perms.privacy, Privacy::Private);
     }
 
     #[test]
