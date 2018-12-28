@@ -2,6 +2,8 @@
 name = "procmaps"
 version = "0.1.0"
 authors = ["Josh Abraham <sinisterpatrician@gmail.com>"]
+description = "Crate for gathering currently mapped memory regions for a given PID"
+keywords = ["unix", "memory", "process", "mappings", "proc"]
 edition = "2018"
 
 [dependencies]
