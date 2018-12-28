@@ -8,6 +8,7 @@ use std::fs::File;
 
 //TODO: create error/result type
 
+
 #[derive(PartialEq, Debug)]
 pub enum Privacy {
     Shared,
@@ -43,20 +44,48 @@ impl From<String> for Permissions {
     }
 }
 
+/// This enum represents the pathname field of a given process.
+/// Usually this is a file that backs up a given mapping.
+#[derive(PartialEq, Debug)]
+pub enum Path {
+    /// A file backs up this mapping
+    MappedFile(String),
+    /// This mapping is the main thread stack
+    Stack,
+    /// This mapping is the a thread's stack
+    ThreadStack(usize),
+    /// This mapping is the virtual dynamically linked shared object
+    Vdso,
+    /// This mapping is the process's heap
+    Heap,
+}
+
+impl From<String> for Path {
+    fn from(input: String) -> Self {
+        // TODO: add ThreadStack type
+        match input.as_ref() {
+            "[heap]" => Path::Heap,
+            "[stack]" => Path::Stack,
+            "[vdso]" => Path::Vdso,
+            s => Path::MappedFile(s.to_string())
+        }
+    }
+}
+
+
 /// man 5 proc
 /// /proc/[pid]/maps
 #[derive(Debug)]
 pub struct Map {
     pub base: *const u8,
     pub ceiling: *const u8,
-    // TODO: make perms a bitfield
     pub perms: Permissions,
     pub offset: usize,
     pub dev_major: usize,
     pub dev_minor: usize,
     pub inode: usize,
     /// If there is no pathname, this mapping was obtained via mmap(2)
-    pub pathname: Option<String>,
+    pub pathname: Path,
 }
 
 named!(parse_map<&str, Map>,
@@ -76,8 +105,7 @@ named!(parse_map<&str, Map>,
         inode: map!(take_until!(" "), String::from)     >>
         //take_while!(|ch: char| ch.is_whitespace())      >>
         take!(1)                                        >>
-        pathname: opt!(take_until!("\n")) >>
-        // pathname: opt!(map!(take_until!("\n"), String::from)) >>
+        pathname: opt!(map!(take_until!("\n"), String::from)) >>
         (Map {
             base: usize::from_str_radix(&base, 16).unwrap() as *const u8,
             ceiling: usize::from_str_radix(&ceiling, 16).unwrap() as *const u8,
@@ -86,10 +114,7 @@ named!(parse_map<&str, Map>,
             dev_major: usize::from_str_radix(&dev_major, 16).unwrap(), 
             dev_minor: usize::from_str_radix(&dev_minor, 16).unwrap(),
             inode: usize::from_str_radix(&inode, 16).unwrap(),
-            pathname: match pathname.unwrap() {
-                "" => None,
-                path => Some(path.trim().to_string()),
-            }
+            pathname: pathname.unwrap().trim().to_string().into(),
         })
     )
 );
@@ -136,7 +161,14 @@ mod tests {
         assert_eq!(res.dev_major, 8);
         assert_eq!(res.dev_minor, 2);
         assert_eq!(res.inode, 152522867);
-        assert_eq!(res.pathname.unwrap(), "/bin/dash");
+        assert_eq!(res.pathname, Path::MappedFile("/bin/dash".to_string()));
+    }
+
+    #[test]
+    fn test_map_path_types() {
+        let input = "55e8d4153000-55e8d416f000 r-xp 00000000 08:02 9175073                    /bin/dash\n";
+        let res = map_from_str(input).unwrap();
+        println!("{:?}", res);
     }
 
     #[test]
