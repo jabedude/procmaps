@@ -83,7 +83,7 @@ pub struct Map {
     pub ceiling: *const u8,
     /// Access permissions of memory region
     pub perms: Permissions,
-    /// If this mapping is backed by a file, thi sis the offset into the file.
+    /// If this mapping is backed by a file, this is the offset into the file.
     pub offset: usize,
     /// Major device number
     pub dev_major: usize,
