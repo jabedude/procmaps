@@ -77,12 +77,19 @@ impl From<String> for Path {
 /// /proc/[pid]/maps
 #[derive(Debug)]
 pub struct Map {
+    /// Base of mapped region in process
     pub base: *const u8,
+    /// Ceiling of mapped region in process
     pub ceiling: *const u8,
+    /// Access permissions of memory region
     pub perms: Permissions,
+    /// If this mapping is backed by a file, thi sis the offset into the file.
     pub offset: usize,
+    /// Major device number
     pub dev_major: usize,
+    /// Minor device number
     pub dev_minor: usize,
+    /// The inode on the above device
     pub inode: usize,
     /// If there is no pathname, this mapping was obtained via mmap(2)
     pub pathname: Path,
