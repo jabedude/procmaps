@@ -1,0 +1,9 @@
+[package]
+name = "procmaps"
+version = "0.1.0"
+authors = ["Josh Abraham <sinisterpatrician@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+nom = "4.1.1"
+libc = "0.2.45"
