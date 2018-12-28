@@ -1,4 +1,4 @@
-# Rust procmaps - retrieve memory maps for a given process
+# Rust procmaps - retrieve process memory maps
 
 A library for retrieving information about memory mappings for Unix processes.
 
