@@ -3,7 +3,6 @@ extern crate nom;
 
 use std::io::{Read, Result, Error, ErrorKind};
 use libc::pid_t;
-use nom::{IResult, is_alphabetic, rest};
 use std::fs::File;
 
 pub enum Permissions {
@@ -94,11 +93,20 @@ pub fn maps(pid: pid_t) -> Result<Vec<Map>> {
 #[cfg(test)]
 mod tests {
     use crate::*;
+
+    //TODO: more tests ie: check none pathname
     #[test]
-    fn it_works() {
+    fn test_parse_map() {
         let input = "55e8d4153000-55e8d416f000 r-xp 00000000 08:02 9175073                    /bin/dash\n";
-        let res = parse_map(input);
+        let res = parse_map(input).unwrap().1;
         println!("{:?}", res);
+        assert_eq!(res.base, 94458478931968);
+        assert_eq!(res.ceiling, 94458479046656);
+        assert_eq!(res.offset, 0);
+        assert_eq!(res.dev_major, 8);
+        assert_eq!(res.dev_minor, 2);
+        assert_eq!(res.inode, 152522867);
+        assert_eq!(res.pathname.unwrap(), "/bin/dash");
     }
 
     #[test]
