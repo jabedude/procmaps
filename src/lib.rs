@@ -1,9 +1,10 @@
 #[macro_use]
 extern crate nom;
 
-use std::io::Result;
+use std::io::{Read, Result, Error, ErrorKind};
 use libc::pid_t;
-use nom::is_alphabetic;
+use nom::{IResult, is_alphabetic};
+use std::fs::File;
 
 pub enum Permissions {
     Read,
@@ -26,13 +27,13 @@ pub struct Map {
 */
 #[derive(Debug)]
 pub struct Map {
-    pub base: String,
-    pub ceiling: String,
+    pub base: usize,
+    pub ceiling: usize,
     pub perms: String,
-    pub offset: String,
-    pub dev_major: String,
-    pub dev_minor: String,
-    pub inode: String,
+    pub offset: usize,
+    pub dev_major: usize,
+    pub dev_minor: usize,
+    pub inode: usize,
     pub pathname: String,
 }
 
@@ -51,26 +52,38 @@ named!(parse_map<&str, Map>,
         dev_minor: map!(take_until!(" "), String::from) >>
         take!(1)                                        >>
         inode: map!(take_until!(" "), String::from)     >>
-        take_while!(|ch: char| ch.is_whitespace())              >>
+        take_while!(|ch: char| ch.is_whitespace())      >>
         pathname: map!(take_until!("\n"), String::from) >>
-        (Map {base: base.into(), ceiling: ceiling.into(), perms: perms.into(), offset: offset.into(), dev_major: dev_major.into(), dev_minor: dev_minor.into(), inode: inode.into(), pathname: pathname.into()})
+        (Map {
+            base: usize::from_str_radix(&base, 16).unwrap(),
+            ceiling: usize::from_str_radix(&ceiling, 16).unwrap(), 
+            perms: perms.into(), 
+            offset: usize::from_str_radix(&ceiling, 16).unwrap(), 
+            dev_major: usize::from_str_radix(&dev_major, 16).unwrap(), 
+            dev_minor: usize::from_str_radix(&dev_minor, 16).unwrap(),
+            inode: usize::from_str_radix(&inode, 16).unwrap(),
+            pathname: pathname.into()
+        })
     )
 );
 
-/*
-pub fn maps(pid: pid_t) -> Result<Map> {
-    Ok( Map {
-        base: 0x00000 as *const u8,
-        size: 0,
-        perms: Permissions::Read,
-        offset: 0,
-        dev_major: 0,
-        dev_minor: 0,
-        inode: 0,
-        pathname: String::from("hello"),
-    })
+fn maps_from_file(file: &mut File) -> Result<Map> {
+    let mut input = String::new();
+    file.read_to_string(&mut input)?;
+
+    let res = parse_map(&input);
+
+    match res {
+        Ok(val) => Ok(val.1),
+        Err(e) => Err(Error::new(ErrorKind::InvalidInput, "unable to parse")),
+    }
 }
-*/
+
+pub fn maps(pid: pid_t) -> Result<Map> {
+    let path = format!("/proc/{}/maps", pid);
+    let mut file = File::open(path)?;
+    maps_from_file(&mut file)
+}
 
 #[cfg(test)]
 mod tests {
@@ -81,4 +94,12 @@ mod tests {
         let res = parse_map(input);
         println!("{:?}", res);
     }
+
+    #[test]
+    fn test_maps_from_file() {
+        let mut infile = File::open("tests/example.txt").unwrap();
+        let res = maps_from_file(&mut infile);
+        println!("{:?}", res);
+    }
+
 }
