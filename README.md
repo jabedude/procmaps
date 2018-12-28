@@ -2,7 +2,7 @@
 
 A library for retrieving information about memory mappings for Unix processes.
 
-To install, add this line to your Cargo.toml:
+To use, add this line to your Cargo.toml:
 
 ```toml
 [dependencies]
