@@ -6,7 +6,7 @@ To use, add this line to your Cargo.toml:
 
 ```toml
 [dependencies]
-procmaps = "0.1.0"
+procmaps = "0.2.0"
 ```
 ## Example
 ```rust

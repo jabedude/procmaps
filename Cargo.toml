@@ -6,7 +6,7 @@ description = "Crate for gathering currently mapped memory regions for a given P
 keywords = ["unix", "memory", "process", "mappings", "proc"]
 license = "MIT/Apache-2.0"
 repository = "https://github.com/jabedude/procmaps"
-documentation = "https://docs.rs/procmaps/0.1.0/procmaps/"
+documentation = "https://docs.rs/procmaps/0.2.0/procmaps/"
 edition = "2018"
 
 [dependencies]
