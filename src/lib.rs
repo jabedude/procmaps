@@ -81,7 +81,9 @@ pub fn maps(pid: pid_t) -> Result<Vec<Map>> {
     file.read_to_string(&mut input)?;
 
     let mut res: Vec<Map> = Vec::new();
-    for s in input.split("\n") {
+    let mut iter: Vec<&str> = input.split("\n").collect();
+    iter.pop();
+    for s in iter {
         let map = map_from_str(&format!("{}\n", &s))?;
         res.push(map);
     }
@@ -111,5 +113,13 @@ mod tests {
             let map = map_from_str(&format!("{}\n", &s)).unwrap();
             println!("{:?}", map);
         }
+    }
+
+    #[test]
+    fn test_maps() {
+        use std::process::id;
+        let m = maps(id() as pid_t);
+        assert!(m.is_ok());
+        println!("{:?}", m);
     }
 }
