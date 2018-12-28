@@ -5,6 +5,9 @@ use std::io::{Read, Result, Error, ErrorKind};
 use libc::pid_t;
 use std::fs::File;
 
+
+//TODO: create error/result type
+
 pub enum Permissions {
     Read,
     Write,
