@@ -23,6 +23,27 @@ pub struct Permissions {
     pub privacy: Privacy,
 }
 
+impl Permissions {
+    fn from_string(input: &str) -> Result<Self> {
+        let readable = input.chars().nth(0) == Some('r');
+        let writable = input.chars().nth(1) == Some('w');
+        let executable = input.chars().nth(2) == Some('x');
+
+        let privacy = match input.chars().nth(3) {
+            Some('p') => Privacy::Private,
+            Some('s') => Privacy::Shared,
+            e => panic!("Unknown {:?}", e),
+        };
+
+        Ok(Permissions {
+            readable: readable,
+            writable: writable,
+            executable: executable,
+            privacy: privacy,
+        })
+    }
+}
+
 impl From<String> for Permissions {
     fn from(input: String) -> Self {
         let readable = input.chars().nth(0) == Some('r');
