@@ -101,10 +101,10 @@ pub enum Path {
     Vsyscall,
 }
 
-impl From<String> for Path {
-    fn from(input: String) -> Self {
+impl From<&str> for Path {
+    fn from(input: &str) -> Self {
         // TODO: add ThreadStack type
-        match input.as_ref() {
+        match input {
             "[heap]" => Path::Heap,
             "[stack]" => Path::Stack,
             "[vdso]" => Path::Vdso,
@@ -162,7 +162,7 @@ named!(parse_map<&str, Map>,
         inode: map!(take_until!(" "), String::from)     >>
         //take_while!(|ch: char| ch.is_whitespace())      >>
         take!(1)                                        >>
-        pathname: opt!(map!(take_until!("\n"), String::from)) >>
+        pathname: opt!(take_until!("\n")) >>
         (Map {
             base: usize::from_str_radix(&base, 16).unwrap() as *const u8,
             ceiling: usize::from_str_radix(&ceiling, 16).unwrap() as *const u8,
@@ -171,7 +171,7 @@ named!(parse_map<&str, Map>,
             dev_major: usize::from_str_radix(&dev_major, 16).unwrap(), 
             dev_minor: usize::from_str_radix(&dev_minor, 16).unwrap(),
             inode: usize::from_str_radix(&inode, 16).unwrap(),
-            pathname: pathname.unwrap().trim().to_string().into(),
+            pathname: pathname.unwrap().trim().into(),
         })
     )
 );
