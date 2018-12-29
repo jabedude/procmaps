@@ -1,3 +1,5 @@
+#![feature(ptr_wrapping_offset_from)]
+
 #[macro_use]
 extern crate nom;
 
@@ -134,6 +136,13 @@ pub struct Map {
     pub pathname: Path,
 }
 
+impl Map {
+    /// Calculate the size of the mapped region
+    pub fn size_of_mapping(&self) -> isize {
+        self.ceiling.wrapping_offset_from(self.base)
+    }
+}
+
 named!(parse_map<&str, Map>,
     do_parse!(
         base: map!(take_until!("-"), String::from)      >>
@@ -241,6 +250,13 @@ mod tests {
         let input = "7fffdb7aa0007fffdb7ac000 r-xp 00000000 00:00 0                          [vdso]\n";
         let res = map_from_str(input);
         assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_size_of_mapping() {
+        let input = "55e8d4153000-55e8d416f000 r-xp 00000000 08:02 9175073                    /bin/dash\n";
+        let res = map_from_str(input).unwrap();
+        assert_eq!(res.size_of_mapping(), 114688isize);
     }
 
     #[test]

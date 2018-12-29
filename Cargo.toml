@@ -1,13 +1,13 @@
 [package]
 name = "procmaps"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Josh Abraham <sinisterpatrician@gmail.com>"]
 description = "Crate for gathering currently mapped memory regions for a given PID"
 keywords = ["unix", "memory", "process", "mappings", "proc"]
 categories = ["os::unix-apis", "memory-management"]
 license = "MIT/Apache-2.0"
 repository = "https://github.com/jabedude/procmaps"
-documentation = "https://docs.rs/procmaps/0.2.0/procmaps/"
+documentation = "https://docs.rs/procmaps/"
 edition = "2018"
 
 [dependencies]
