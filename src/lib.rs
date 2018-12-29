@@ -62,6 +62,9 @@ pub struct Permissions {
 
 impl Permissions {
     fn from_str(input: &str) -> Result<Self> {
+        if input.len() != 4 {
+            return Err(Error::InvalidInput)
+        }
         let input = input.as_bytes();
         let readable = input[0] == b'r';
         let writable = input[1] == b'w';
