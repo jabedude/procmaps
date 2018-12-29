@@ -1,5 +1,7 @@
 #![feature(ptr_wrapping_offset_from)]
+#![feature(test)]
 
+extern crate test;
 #[macro_use]
 extern crate nom;
 
@@ -203,6 +205,7 @@ pub fn maps(pid: pid_t) -> Result<Vec<Map>> {
 #[cfg(test)]
 mod tests {
     use crate::*;
+    use test::Bencher;
 
     //TODO: more tests ie: check none pathname
     #[test]
@@ -268,6 +271,15 @@ mod tests {
         assert!(!res.perms.writable);
         assert!(res.perms.executable);
         assert_eq!(res.perms.privacy, Privacy::Private);
+    }
+
+    #[bench]
+    fn bench_map_from_str(b: &mut Bencher) {
+        let input = "55e8d4153000-55e8d416f000 r-xp 00000000 08:02 9175073                    /bin/dash\n";
+
+        b.iter(||
+            map_from_str(input).unwrap()
+        )
     }
 
     #[test]
