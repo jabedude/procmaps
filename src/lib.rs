@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use std::result;
+use std::{fmt, result};
 use std::io::Read;
 use libc::pid_t;
 use std::fs::File;
@@ -15,9 +15,30 @@ pub enum Error {
     IoError,
 }
 
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Error::InvalidInput => write!(f, "Invalid input"),
+            Error::IoError => write!(f, "IO Error"),
+        }
+    }
+}
+
 impl From<std::io::Error> for Error {
     fn from(_: std::io::Error) -> Error {
         Error::IoError
+    }
+}
+
+impl <'a>From<Error> for nom::Err<&'a str> {
+    fn from(_: Error) -> nom::Err<&'a str> {
+        nom::Err::Incomplete(nom::Needed::Unknown)
+    }
+}
+
+impl <T>From<nom::Err<T>> for Error {
+    fn from(_: nom::Err<T>) -> Error {
+        Error::InvalidInput
     }
 }
 
@@ -134,7 +155,7 @@ named!(parse_map<&str, Map>,
         (Map {
             base: usize::from_str_radix(&base, 16).unwrap() as *const u8,
             ceiling: usize::from_str_radix(&ceiling, 16).unwrap() as *const u8,
-            perms: Permissions::from_str(&perms).unwrap(),
+            perms: Permissions::from_str(&perms)?,
             offset: usize::from_str_radix(&offset, 16).unwrap(), 
             dev_major: usize::from_str_radix(&dev_major, 16).unwrap(), 
             dev_minor: usize::from_str_radix(&dev_minor, 16).unwrap(),
@@ -202,6 +223,22 @@ mod tests {
         let input = "7fffdb7aa000-7fffdb7ac000 r-xp 00000000 00:00 0                          [vdso]\n";
         let res = map_from_str(input).unwrap();
         assert_eq!(res.pathname, Path::Vdso);
+    }
+
+    #[test]
+    fn test_map_from_str_invalid_inputs() {
+        let input = "7fffdb68b000-7fffdb6ac000 rw- 00000000 00:00 0                          [stack]\n";
+        let res = map_from_str(input);
+        println!("{:?}", res);
+        assert!(res.is_err());
+
+        //let input = "7fffdb7a7000-7fffdb7aa000 r--p 00000000 00:00 0                          [vvar]\n";
+        //let res = map_from_str(input).unwrap();
+        //assert_eq!(res.pathname, Path::Vvar);
+
+        //let input = "7fffdb7aa000-7fffdb7ac000 r-xp 00000000 00:00 0                          [vdso]\n";
+        //let res = map_from_str(input).unwrap();
+        //assert_eq!(res.pathname, Path::Vdso);
     }
 
     #[test]
