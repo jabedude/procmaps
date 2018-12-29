@@ -62,13 +62,14 @@ pub struct Permissions {
 
 impl Permissions {
     fn from_str(input: &str) -> Result<Self> {
-        let readable = input.chars().nth(0) == Some('r');
-        let writable = input.chars().nth(1) == Some('w');
-        let executable = input.chars().nth(2) == Some('x');
+        let input = input.as_bytes();
+        let readable = input[0] == b'r';
+        let writable = input[1] == b'w';
+        let executable = input[2] == b'x';
 
-        let privacy = match input.chars().nth(3) {
-            Some('p') => Privacy::Private,
-            Some('s') => Privacy::Shared,
+        let privacy = match input[3] {
+            b'p' => Privacy::Private,
+            b's' => Privacy::Shared,
             _e => return Err(Error::InvalidInput),
         };
 
