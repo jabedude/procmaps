@@ -227,18 +227,20 @@ mod tests {
 
     #[test]
     fn test_map_from_str_invalid_inputs() {
+        // Invalid permissions
         let input = "7fffdb68b000-7fffdb6ac000 rw- 00000000 00:00 0                          [stack]\n";
         let res = map_from_str(input);
-        println!("{:?}", res);
         assert!(res.is_err());
 
-        //let input = "7fffdb7a7000-7fffdb7aa000 r--p 00000000 00:00 0                          [vvar]\n";
-        //let res = map_from_str(input).unwrap();
-        //assert_eq!(res.pathname, Path::Vvar);
+        // Invalid device
+        let input = "7fffdb7a7000-7fffdb7aa000 r--p 00000000 0000 0                          [vvar]\n";
+        let res = map_from_str(input);
+        assert!(res.is_err());
 
-        //let input = "7fffdb7aa000-7fffdb7ac000 r-xp 00000000 00:00 0                          [vdso]\n";
-        //let res = map_from_str(input).unwrap();
-        //assert_eq!(res.pathname, Path::Vdso);
+        // Invalid address format
+        let input = "7fffdb7aa0007fffdb7ac000 r-xp 00000000 00:00 0                          [vdso]\n";
+        let res = map_from_str(input);
+        assert!(res.is_err());
     }
 
     #[test]
