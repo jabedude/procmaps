@@ -52,12 +52,16 @@ pub enum Path {
     MappedFile(String),
     /// This mapping is the main thread stack
     Stack,
-    /// This mapping is the a thread's stack
+    /// This mapping is a thread's stack
     ThreadStack(usize),
     /// This mapping is the virtual dynamically linked shared object
     Vdso,
     /// This mapping is the process's heap
     Heap,
+    /// This mapping holds variables updated by the kernel
+    Vvar,
+    /// This region is the vsyscall mapping
+    Vsyscall,
 }
 
 impl From<String> for Path {
@@ -67,6 +71,8 @@ impl From<String> for Path {
             "[heap]" => Path::Heap,
             "[stack]" => Path::Stack,
             "[vdso]" => Path::Vdso,
+            "[vvar]" => Path::Vvar,
+            "[vsyscall]" => Path::Vvar,
             s => Path::MappedFile(s.to_string())
         }
     }
@@ -173,9 +179,17 @@ mod tests {
 
     #[test]
     fn test_map_path_types() {
-        let input = "55e8d4153000-55e8d416f000 r-xp 00000000 08:02 9175073                    /bin/dash\n";
+        let input = "7fffdb68b000-7fffdb6ac000 rw-p 00000000 00:00 0                          [stack]\n";
         let res = map_from_str(input).unwrap();
-        println!("{:?}", res);
+        assert_eq!(res.pathname, Path::Stack);
+
+        let input = "7fffdb7a7000-7fffdb7aa000 r--p 00000000 00:00 0                          [vvar]\n";
+        let res = map_from_str(input).unwrap();
+        assert_eq!(res.pathname, Path::Vvar);
+
+        let input = "7fffdb7aa000-7fffdb7ac000 r-xp 00000000 00:00 0                          [vdso]\n";
+        let res = map_from_str(input).unwrap();
+        assert_eq!(res.pathname, Path::Vdso);
     }
 
     #[test]
