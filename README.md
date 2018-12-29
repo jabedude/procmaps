@@ -6,7 +6,7 @@ To use, add this line to your Cargo.toml:
 
 ```toml
 [dependencies]
-procmaps = "0.2.0"
+procmaps = "0.3.0"
 ```
 ## Example
 ```rust
@@ -15,7 +15,7 @@ use procmaps::maps;
 let m = maps(pid).unwrap();
 for mapping in m {
     if mapping.perms.executable {
-        println!("Region: {:x} - {:x}", mapping.base, mapping.ceiling);
+        println!("Region: {:x} - {:x} Size: {}", mapping.base, mapping.ceiling, mapping.size_of_mapping());
     }
 }
 ```
