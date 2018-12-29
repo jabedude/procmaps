@@ -1,13 +1,25 @@
 #[macro_use]
 extern crate nom;
 
-use std::io::{Read, Result, Error, ErrorKind};
+use std::result;
+use std::io::Read;
 use libc::pid_t;
 use std::fs::File;
 
 
-//TODO: create error/result type
+pub type Result<T> = result::Result<T, Error>;
 
+#[derive(Debug)]
+pub enum Error {
+    InvalidInput,
+    IoError,
+}
+
+impl From<std::io::Error> for Error {
+    fn from(_: std::io::Error) -> Error {
+        Error::IoError
+    }
+}
 
 #[derive(PartialEq, Debug)]
 pub enum Privacy {
@@ -24,7 +36,7 @@ pub struct Permissions {
 }
 
 impl Permissions {
-    fn from_string(input: &str) -> Result<Self> {
+    fn from_str(input: &str) -> Result<Self> {
         let readable = input.chars().nth(0) == Some('r');
         let writable = input.chars().nth(1) == Some('w');
         let executable = input.chars().nth(2) == Some('x');
@@ -32,7 +44,7 @@ impl Permissions {
         let privacy = match input.chars().nth(3) {
             Some('p') => Privacy::Private,
             Some('s') => Privacy::Shared,
-            e => panic!("Unknown {:?}", e),
+            _e => return Err(Error::InvalidInput),
         };
 
         Ok(Permissions {
@@ -41,27 +53,6 @@ impl Permissions {
             executable: executable,
             privacy: privacy,
         })
-    }
-}
-
-impl From<String> for Permissions {
-    fn from(input: String) -> Self {
-        let readable = input.chars().nth(0) == Some('r');
-        let writable = input.chars().nth(1) == Some('w');
-        let executable = input.chars().nth(2) == Some('x');
-
-        let privacy = match input.chars().nth(3) {
-            Some('p') => Privacy::Private,
-            Some('s') => Privacy::Shared,
-            e => panic!("Unknown {:?}", e),
-        };
-
-        Permissions {
-            readable: readable,
-            writable: writable,
-            executable: executable,
-            privacy: privacy,
-        }
     }
 }
 
@@ -143,7 +134,7 @@ named!(parse_map<&str, Map>,
         (Map {
             base: usize::from_str_radix(&base, 16).unwrap() as *const u8,
             ceiling: usize::from_str_radix(&ceiling, 16).unwrap() as *const u8,
-            perms: perms.into(), 
+            perms: Permissions::from_str(&perms).unwrap(),
             offset: usize::from_str_radix(&offset, 16).unwrap(), 
             dev_major: usize::from_str_radix(&dev_major, 16).unwrap(), 
             dev_minor: usize::from_str_radix(&dev_minor, 16).unwrap(),
@@ -158,7 +149,7 @@ fn map_from_str(input: &str) -> Result<Map> {
 
     match res {
         Ok(val) => Ok(val.1),
-        Err(e) => Err(Error::new(ErrorKind::InvalidInput, format!("Invalid maps format: {}", e))),
+        Err(_e) => Err(Error::InvalidInput),
     }
 }
 
