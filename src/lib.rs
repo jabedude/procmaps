@@ -5,7 +5,7 @@ extern crate test;
 #[macro_use]
 extern crate nom;
 
-use std::{fmt, result};
+use std::{error, fmt, result};
 use std::io::Read;
 use libc::pid_t;
 use std::fs::File;
@@ -25,6 +25,19 @@ impl fmt::Display for Error {
             Error::InvalidInput => write!(f, "Invalid input"),
             Error::IoError => write!(f, "IO Error"),
         }
+    }
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        match *self {
+            Error::InvalidInput => "Incorrect input data for memory mapping",
+            Error::IoError => "I/O error",
+        }
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        None
     }
 }
 
