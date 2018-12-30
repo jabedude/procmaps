@@ -152,20 +152,20 @@ impl Map {
 named!(parse_map<&str, Map>,
     do_parse!(
         base: map_res!(take_until!("-"), |b| usize::from_str_radix(b, 16))      >>
-        take!(1)                                        >>
+        take!(1)                                                                >>
         ceiling: map_res!(take_until!(" "), |b| usize::from_str_radix(b, 16))   >>
-        take!(1)                                        >>
+        take!(1)                                                                >>
         perms: map_res!(take_until!(" "), |b| Permissions::from_str(b))         >>
-        take!(1)                                        >>
+        take!(1)                                                                >>
         offset: map_res!(take_until!(" "), |b| usize::from_str_radix(b, 16))    >>
-        take!(1)                                        >>
+        take!(1)                                                                >>
         dev_major: map_res!(take_until!(":"), |b| usize::from_str_radix(b, 16)) >>
-        take!(1)                                        >>
+        take!(1)                                                                >>
         dev_minor: map_res!(take_until!(" "), |b| usize::from_str_radix(b, 16)) >>
-        take!(1)                                        >>
+        take!(1)                                                                >>
         inode: map_res!(take_until!(" "), |b| usize::from_str_radix(b, 16))     >>
-        take!(1)                                        >>
-        pathname: opt!(take_until!("\n")) >>
+        take!(1)                                                                >>
+        pathname: opt!(take_until!("\n"))                                       >>
         (Map {
             base: base as *const u8,
             ceiling: ceiling as *const u8,
