@@ -151,30 +151,29 @@ impl Map {
 
 named!(parse_map<&str, Map>,
     do_parse!(
-        base: map!(take_until!("-"), String::from)      >>
+        base: map_res!(take_until!("-"), |b| usize::from_str_radix(b, 16))      >>
         take!(1)                                        >>
-        ceiling: map!(take_until!(" "), String::from)   >>
+        ceiling: map_res!(take_until!(" "), |b| usize::from_str_radix(b, 16))   >>
         take!(1)                                        >>
-        perms: map!(take_until!(" "), String::from)     >>
+        perms: map_res!(take_until!(" "), |b| Permissions::from_str(b))         >>
         take!(1)                                        >>
-        offset: map!(take_until!(" "), String::from)    >>
+        offset: map_res!(take_until!(" "), |b| usize::from_str_radix(b, 16))    >>
         take!(1)                                        >>
-        dev_major: map!(take_until!(":"), String::from) >>
+        dev_major: map_res!(take_until!(":"), |b| usize::from_str_radix(b, 16)) >>
         take!(1)                                        >>
-        dev_minor: map!(take_until!(" "), String::from) >>
+        dev_minor: map_res!(take_until!(" "), |b| usize::from_str_radix(b, 16)) >>
         take!(1)                                        >>
-        inode: map!(take_until!(" "), String::from)     >>
-        //take_while!(|ch: char| ch.is_whitespace())      >>
+        inode: map_res!(take_until!(" "), |b| usize::from_str_radix(b, 16))     >>
         take!(1)                                        >>
         pathname: opt!(take_until!("\n")) >>
         (Map {
-            base: usize::from_str_radix(&base, 16).unwrap() as *const u8,
-            ceiling: usize::from_str_radix(&ceiling, 16).unwrap() as *const u8,
-            perms: Permissions::from_str(&perms)?,
-            offset: usize::from_str_radix(&offset, 16).unwrap(), 
-            dev_major: usize::from_str_radix(&dev_major, 10).unwrap(),
-            dev_minor: usize::from_str_radix(&dev_minor, 10).unwrap(),
-            inode: usize::from_str_radix(&inode, 16).unwrap(),
+            base: base as *const u8,
+            ceiling: ceiling as *const u8,
+            perms: perms,
+            offset: offset,
+            dev_major: dev_major,
+            dev_minor: dev_minor,
+            inode: inode,
             pathname: pathname.unwrap().trim().into(),
         })
     )
