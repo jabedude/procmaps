@@ -188,6 +188,7 @@ fn map_from_str(input: &str) -> Result<Map> {
     }
 }
 
+/// Returns a Vector of Maps for a given pid
 pub fn maps(pid: pid_t) -> Result<Vec<Map>> {
     let path = format!("/proc/{}/maps", pid);
     let mut file = File::open(path)?;
