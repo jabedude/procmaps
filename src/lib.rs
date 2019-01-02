@@ -135,7 +135,7 @@ impl From<&str> for Path {
 
 
 /// Holds data for a given memory mapped region.
-/// [For more information](http://man7.org/linux/man-pages/man5/proc.5.html)
+/// [For more information.](http://man7.org/linux/man-pages/man5/proc.5.html)
 #[derive(Debug)]
 pub struct Map {
     /// Base of mapped region in process
