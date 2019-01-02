@@ -60,12 +60,16 @@ impl <T>From<nom::Err<T>> for Error {
     }
 }
 
+/// Represents the privacy of a mapping.
 #[derive(PartialEq, Debug)]
 pub enum Privacy {
+    /// This mapping is shared
     Shared,
+    /// This mapping is private (copy on write)
     Private,
 }
 
+/// Represents the permissions of for a memory mapping.
 #[derive(Debug)]
 pub struct Permissions {
     pub readable: bool,
