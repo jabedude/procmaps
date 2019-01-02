@@ -7,6 +7,7 @@ extern crate nom;
 
 use std::{error, fmt, result};
 use std::io::Read;
+use std::ops::{Deref, DerefMut};
 use libc::pid_t;
 use std::fs::File;
 
@@ -133,8 +134,8 @@ impl From<&str> for Path {
 }
 
 
-/// man 5 proc
-/// /proc/[pid]/maps
+/// Holds data for a given memory mapped region.
+/// [For more information](http://man7.org/linux/man-pages/man5/proc.5.html)
 #[derive(Debug)]
 pub struct Map {
     /// Base of mapped region in process
@@ -159,6 +160,15 @@ impl Map {
     /// Calculate the size of the mapped region
     pub fn size_of_mapping(&self) -> isize {
         self.ceiling.wrapping_offset_from(self.base)
+    }
+
+    fn from_str(input: &str) -> Result<Map> {
+        let res = parse_map(input);
+
+        match res {
+            Ok(val) => Ok(val.1),
+            Err(_e) => Err(Error::InvalidInput),
+        }
     }
 }
 
@@ -192,31 +202,41 @@ named!(parse_map<&str, Map>,
     )
 );
 
-fn map_from_str(input: &str) -> Result<Map> {
-    let res = parse_map(input);
 
-    match res {
-        Ok(val) => Ok(val.1),
-        Err(_e) => Err(Error::InvalidInput),
+/// A collection of memory mapped regions.
+#[derive(Debug)]
+pub struct Mappings(Vec<Map>);
+
+impl Mappings {
+    /// Returns mappings for a given pid
+    pub fn from_pid(pid: pid_t) -> Result<Mappings> {
+        let path = format!("/proc/{}/maps", pid);
+        let mut file = File::open(path)?;
+        let mut input = String::new();
+        file.read_to_string(&mut input)?;
+
+        let mut res: Vec<Map> = Vec::new();
+        let mut iter: Vec<&str> = input.split("\n").collect();
+        iter.pop();
+        for s in iter {
+            let map = Map::from_str(&format!("{}\n", &s))?;
+            res.push(map);
+        }
+
+        Ok(Mappings(res))
     }
 }
 
-/// Returns a Vector of Maps for a given pid
-pub fn maps(pid: pid_t) -> Result<Vec<Map>> {
-    let path = format!("/proc/{}/maps", pid);
-    let mut file = File::open(path)?;
-    let mut input = String::new();
-    file.read_to_string(&mut input)?;
+impl Deref for Mappings {
+    type Target = Vec<Map>;
 
-    let mut res: Vec<Map> = Vec::new();
-    let mut iter: Vec<&str> = input.split("\n").collect();
-    iter.pop();
-    for s in iter {
-        let map = map_from_str(&format!("{}\n", &s))?;
-        res.push(map);
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
+}
 
-    Ok(res)
+impl DerefMut for Mappings {
+    fn deref_mut(&mut self) -> &mut Vec<Map> { &mut self.0 }
 }
 
 #[cfg(test)]
@@ -242,15 +262,15 @@ mod tests {
     #[test]
     fn test_map_path_types() {
         let input = "7fffdb68b000-7fffdb6ac000 rw-p 00000000 00:00 0                          [stack]\n";
-        let res = map_from_str(input).unwrap();
+        let res = Map::from_str(input).unwrap();
         assert_eq!(res.pathname, Path::Stack);
 
         let input = "7fffdb7a7000-7fffdb7aa000 r--p 00000000 00:00 0                          [vvar]\n";
-        let res = map_from_str(input).unwrap();
+        let res = Map::from_str(input).unwrap();
         assert_eq!(res.pathname, Path::Vvar);
 
         let input = "7fffdb7aa000-7fffdb7ac000 r-xp 00000000 00:00 0                          [vdso]\n";
-        let res = map_from_str(input).unwrap();
+        let res = Map::from_str(input).unwrap();
         assert_eq!(res.pathname, Path::Vdso);
     }
 
@@ -258,31 +278,31 @@ mod tests {
     fn test_map_from_str_invalid_inputs() {
         // Invalid permissions
         let input = "7fffdb68b000-7fffdb6ac000 rw- 00000000 00:00 0                          [stack]\n";
-        let res = map_from_str(input);
+        let res = Map::from_str(input);
         assert!(res.is_err());
 
         // Invalid device
         let input = "7fffdb7a7000-7fffdb7aa000 r--p 00000000 0000 0                          [vvar]\n";
-        let res = map_from_str(input);
+        let res = Map::from_str(input);
         assert!(res.is_err());
 
         // Invalid address format
         let input = "7fffdb7aa0007fffdb7ac000 r-xp 00000000 00:00 0                          [vdso]\n";
-        let res = map_from_str(input);
+        let res = Map::from_str(input);
         assert!(res.is_err());
     }
 
     #[test]
     fn test_size_of_mapping() {
         let input = "55e8d4153000-55e8d416f000 r-xp 00000000 08:02 9175073                    /bin/dash\n";
-        let res = map_from_str(input).unwrap();
+        let res = Map::from_str(input).unwrap();
         assert_eq!(res.size_of_mapping(), 114688isize);
     }
 
     #[test]
     fn test_map_perms() {
         let input = "55e8d4153000-55e8d416f000 r-xp 00000000 08:02 9175073                    /bin/dash\n";
-        let res = map_from_str(input).unwrap();
+        let res = Map::from_str(input).unwrap();
         println!("{:?}", res);
         assert!(res.perms.readable);
         assert!(!res.perms.writable);
@@ -295,7 +315,7 @@ mod tests {
         let input = "55e8d4153000-55e8d416f000 r-xp 00000000 08:02 9175073                    /bin/dash\n";
 
         b.iter(||
-            map_from_str(input).unwrap()
+            Map::from_str(input).unwrap()
         )
     }
 
@@ -308,7 +328,7 @@ mod tests {
         let mut iter: Vec<&str> = input.split("\n").collect();
         iter.pop();
         for s in iter {
-            let map = map_from_str(&format!("{}\n", &s)).unwrap();
+            let map = Map::from_str(&format!("{}\n", &s)).unwrap();
             println!("{:?}", map);
         }
     }
@@ -316,7 +336,7 @@ mod tests {
     #[test]
     fn test_maps() {
         use std::process::id;
-        let m = maps(id() as pid_t);
+        let m = Mappings::from_pid(id() as pid_t);
         assert!(m.is_ok());
         println!("{:?}", m);
     }
