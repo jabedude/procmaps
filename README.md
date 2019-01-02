@@ -10,10 +10,10 @@ procmaps = "0.4.0"
 ```
 ## Example
 ```rust
-use procmaps::maps;
+use procmaps::Mappings;
 
-let m = maps(pid).unwrap();
-for mapping in m {
+let mappings = Mappings::from_pid(pid).unwrap();
+for mapping in mappings {
     if mapping.perms.executable {
         println!("Region: {:x} - {:x} Size: {}", mapping.base, mapping.ceiling, mapping.size_of_mapping());
     }
