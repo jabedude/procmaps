@@ -231,7 +231,8 @@ impl Mappings {
         Ok(Mappings(res))
     }
 
-    pub fn from_path(path: &PathBuf) -> Result<Mappings> {
+    pub fn from_path(path: &mut PathBuf) -> Result<Mappings> {
+        path.push("maps");
         let mut file = File::open(path)?;
         let mut input = String::new();
         file.read_to_string(&mut input)?;
