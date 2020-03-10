@@ -10,6 +10,7 @@ use std::io::Read;
 use std::ops::{Deref, DerefMut};
 use libc::pid_t;
 use std::fs::File;
+use std::path::PathBuf;
 
 
 pub type Result<T> = result::Result<T, Error>;
@@ -215,6 +216,22 @@ impl Mappings {
     /// Returns mappings for a given pid
     pub fn from_pid(pid: pid_t) -> Result<Mappings> {
         let path = format!("/proc/{}/maps", pid);
+        let mut file = File::open(path)?;
+        let mut input = String::new();
+        file.read_to_string(&mut input)?;
+
+        let mut res: Vec<Map> = Vec::new();
+        let mut iter: Vec<&str> = input.split("\n").collect();
+        iter.pop();
+        for s in iter {
+            let map = Map::from_str(&format!("{}\n", &s))?;
+            res.push(map);
+        }
+
+        Ok(Mappings(res))
+    }
+
+    pub fn from_path(path: &PathBuf) -> Result<Mappings> {
         let mut file = File::open(path)?;
         let mut input = String::new();
         file.read_to_string(&mut input)?;
