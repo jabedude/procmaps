@@ -144,9 +144,9 @@ impl From<&str> for Path {
 #[derive(Debug)]
 pub struct Map {
     /// Base of mapped region in process
-    pub base: *const u8,
+    pub base: usize,
     /// Ceiling of mapped region in process
-    pub ceiling: *const u8,
+    pub ceiling: usize,
     /// Access permissions of memory region
     pub perms: Permissions,
     /// If this mapping is backed by a file, this is the offset into the file.
@@ -163,8 +163,8 @@ pub struct Map {
 
 impl Map {
     /// Calculate the size of the mapped region
-    pub fn size_of_mapping(&self) -> isize {
-        self.ceiling.wrapping_offset_from(self.base)
+    pub fn size_of_mapping(&self) -> usize {
+        self.ceiling - self.base
     }
 
     fn from_str(input: &str) -> Result<Map> {
@@ -195,8 +195,8 @@ named!(parse_map<&str, Map>,
         take!(1)                                                                >>
         pathname: opt!(take_until!("\n"))                                       >>
         (Map {
-            base: base as *const u8,
-            ceiling: ceiling as *const u8,
+            base: base,
+            ceiling: ceiling,
             perms: perms,
             offset: offset,
             dev_major: dev_major,
@@ -272,8 +272,8 @@ mod tests {
         let input = "55e8d4153000-55e8d416f000 r-xp 00000000 08:02 9175073                    /bin/dash\n";
         let res = parse_map(input).unwrap().1;
         println!("{:?}", res);
-        assert_eq!(res.base, 94458478931968 as *const u8);
-        assert_eq!(res.ceiling, 94458479046656 as *const u8);
+        assert_eq!(res.base, 94458478931968);
+        assert_eq!(res.ceiling, 94458479046656);
         assert_eq!(res.offset, 0);
         assert_eq!(res.dev_major, 8);
         assert_eq!(res.dev_minor, 2);
@@ -318,7 +318,7 @@ mod tests {
     fn test_size_of_mapping() {
         let input = "55e8d4153000-55e8d416f000 r-xp 00000000 08:02 9175073                    /bin/dash\n";
         let res = Map::from_str(input).unwrap();
-        assert_eq!(res.size_of_mapping(), 114688isize);
+        assert_eq!(res.size_of_mapping(), 114688usize);
     }
 
     #[test]
