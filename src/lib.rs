@@ -1,4 +1,3 @@
-#![feature(ptr_wrapping_offset_from)]
 #![feature(test)]
 
 extern crate test;
@@ -38,7 +37,7 @@ impl error::Error for Error {
         }
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         None
     }
 }
