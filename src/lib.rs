@@ -1,6 +1,3 @@
-#![feature(test)]
-
-extern crate test;
 #[macro_use]
 extern crate nom;
 
@@ -263,7 +260,6 @@ impl DerefMut for Mappings {
 #[cfg(test)]
 mod tests {
     use crate::*;
-    use test::Bencher;
 
     //TODO: more tests ie: check none pathname
     #[test]
@@ -331,6 +327,7 @@ mod tests {
         assert_eq!(res.perms.privacy, Privacy::Private);
     }
 
+    /*
     #[bench]
     fn bench_map_from_str(b: &mut Bencher) {
         let input = "55e8d4153000-55e8d416f000 r-xp 00000000 08:02 9175073                    /bin/dash\n";
@@ -339,6 +336,7 @@ mod tests {
             Map::from_str(input).unwrap()
         )
     }
+    */
 
     #[test]
     fn test_map_from_str() {
