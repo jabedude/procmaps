@@ -13,7 +13,7 @@ procmaps = "0.4.1"
 use procmaps::Mappings;
 
 let mappings = Mappings::from_pid(pid).unwrap();
-for mapping in mappings {
+for mapping in mappings.iter() {
     if mapping.perms.executable {
         println!("Region: {:x} - {:x} Size: {}", mapping.base, mapping.ceiling, mapping.size_of_mapping());
     }
