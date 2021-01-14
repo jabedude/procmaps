@@ -1,6 +1,6 @@
 [package]
 name = "procmaps"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Josh Abraham <sinisterpatrician@gmail.com>"]
 description = "Crate for gathering currently mapped memory regions for a given PID"
 keywords = ["unix", "memory", "process", "mappings", "proc"]
