@@ -215,16 +215,7 @@ impl Mappings {
         let mut file = File::open(path)?;
         let mut input = String::new();
         file.read_to_string(&mut input)?;
-
-        let mut res: Vec<Map> = Vec::new();
-        let mut iter: Vec<&str> = input.split("\n").collect();
-        iter.pop();
-        for s in iter {
-            let map = Map::from_str(&format!("{}\n", &s))?;
-            res.push(map);
-        }
-
-        Ok(Mappings(res))
+        Mappings::from_str(&input)
     }
 
     pub fn from_path(path: &mut PathBuf) -> Result<Mappings> {
@@ -232,7 +223,10 @@ impl Mappings {
         let mut file = File::open(path)?;
         let mut input = String::new();
         file.read_to_string(&mut input)?;
-
+        Mappings::from_str(&input)
+    }
+    pub fn from_str(raw : &str) -> Result<Mappings> {
+        let input = String::from(raw);
         let mut res: Vec<Map> = Vec::new();
         let mut iter: Vec<&str> = input.split("\n").collect();
         iter.pop();
